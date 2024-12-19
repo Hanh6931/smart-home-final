@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bedroom Controls</title>
+     <link rel="stylesheet" href="{{ url_for("static",filename = "style.css") }}">
+    <script src="{{ url_for('static',filename="api.js") }}"></script>
+
+</head>
+<body>
+    <!-- 导航栏 -->
+     <nav class="sidebar">
+        <div class="logo">SH</div>
+        <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/bedroom" class="active">Bedroom</a></li>
+            <li><a href="/living_room">Living Room</a></li>
+            <li><a href="/kitchen">Kitchen</a></li>
+            <li><a href="/bathroom">Bathroom</a></li>
+        </ul>
+        <button class="logout-btn">{{ username }}<a href="/logout">Logout</a></button>
+    </nav>
+
+    <div class="main-content">
+        <header>
+            <h1>Bedroom Control</h1>
+        </header>
+
+        <div class="container">
+            <!-- Bedroom Light Control -->
+            <div class="device-control light-control">
+                <h2>Lights</h2>
+                <div id="light-bulb" class="light-bulb off"></div>
+                <label for="brightness">Brightness</label>
+                <input type="range" id="brightness" min="0" max="100" value="50" disabled>
+
+                <h3>RGB Control</h3>
+                <label for="red">Red</label>
+                <input type="range" id="red" min="0" max="255" value="128" disabled>
+                <p>Red: <span id="redValue">128</span></p>
+
+                <label for="green">Green</label>
+                <input type="range" id="green" min="0" max="255" value="128" disabled>
+                <p>Green: <span id="greenValue">128</span></p>
+
+                <label for="blue">Blue</label>
+                <input type="range" id="blue" min="0" max="255" value="128" disabled>
+                <p>Blue: <span id="blueValue">128</span></p>
+
+                <button id="toggle-light">Toggle Light</button>
+                <p>Status: <span id="lightStatus">Off</span></p>
+                 <script>
+                    const  room_id = 1
+                     send_data(
+                         "/get_device",
+                         JSON.stringify({room_id:room_id, device_type_id:1}),
+                         "POST",
+                         inint_light,
+                         function (){
+                             alert(data.error)
+                         },
+                         {'Content-Type': 'application/json'}
+                     )
+
+                </script>
+            </div>
+
+            <!-- Bedroom Curtain Control -->
+            <div class="device-control curtain-control">
+                <h2>Curtain Control</h2>
+                <div class="curtain-container">
+                    <div id="left-curtain" class="curtain curtain-left"></div>
+                    <div id="right-curtain" class="curtain curtain-right"></div>
+                </div>
+
+                <label for="leftCurtainRange">Left Curtain</label>
+                <input type="range" id="leftCurtainRange" min="0" max="100" value="100">
+                <p>Left Status: <span id="leftCurtainStatus">Closed</span></p>
+                <label for="rightCurtainRange">Right Curtain</label>
+                <input type="range" id="rightCurtainRange" min="0" max="100" value="100">
+                <p>Right Status: <span id="rightCurtainStatus">Closed</span></p>
+
+                <script>
+                     send_data(
+                         "/get_device",
+                         JSON.stringify({room_id:room_id, device_type_id:2}),
+                         "POST",
+                         init_curtain,
+                         function (){
+                             alert(data.error)
+                         },
+                         {'Content-Type': 'application/json'}
+                     )
+
+                </script>
+            </div>
+
+            <!-- Bedroom Air Conditioner Control -->
+            <div class="device-control ac-control">
+                <h2>Air Conditioner</h2>
+                <div id="ac-dial" class="ac-dial off">
+                    <div class="dial-center">
+                        <span id="acTempDisplay">22°C</span>
+                    </div>
+                </div>
+                <select id="modeSelect">
+                    <option value="cool">Cooling</option>
+                    <option value="heat">Heating</option>
+                    <option value="fan">Fan</option>
+                </select>
+                <input type="range" id="temperature" min="16" max="30" value="22" disabled>
+                <button id="toggle-ac">Toggle AC</button>
+                <p>Mode: <span id="acModeDisplay">Cooling</span></p>
+                <p>Temperature: <span id="tempDisplay">22</span>°C</p>
+                 <script>
+                     send_data(
+                         "/get_device",
+                         JSON.stringify({room_id:room_id, device_type_id:3}),
+                         "POST",
+                         init_ac,
+                         function (){
+                             alert(data.error)
+                         },
+                         {'Content-Type': 'application/json'}
+                     )
+
+                </script>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Light Control Logic
+        const lightBulb = document.getElementById('light-bulb');
+        const brightnessInput = document.getElementById('brightness');
+        const redInput = document.getElementById('red');
+        const greenInput = document.getElementById('green');
+        const blueInput = document.getElementById('blue');
+        const redValue = document.getElementById('redValue');
+        const greenValue = document.getElementById('greenValue');
+        const blueValue = document.getElementById('blueValue');
+        const lightStatus = document.getElementById('lightStatus');
+
+// 初始化灯光状态变量
+let isLightOn = false;
+
+// 更新 RGB 数值显示
+function updateRGBValues() {
+    redValue.textContent = redInput.value;
+    greenValue.textContent = greenInput.value;
+    blueValue.textContent = blueInput.value;
+}
+
+// 添加事件监听器，实时更新 RGB 数值显示
+[redInput, greenInput, blueInput].forEach(input => {
+    input.addEventListener('input', updateRGBValues);
+});
+
+// 添加鼠标松开发送消息
+[redInput, greenInput, blueInput].forEach(input => {
+    input.addEventListener('mouseup', () => {
+        send_light_data(1); // 示例调用发送数据方法
+    });
+});
+
+// Toggle Light Button Logic
+document.getElementById('toggle-light').addEventListener('click', () => {
+    toggleLight(!isLightOn);
+});
+
+// 切换灯光状态函数
+function toggleLight(state) {
+    isLightOn = state;
+
+    localStorage.setItem('bedroom_light', isLightOn);
+    lightStatus.textContent = isLightOn ? 'On' : 'Off';
+    lightBulb.classList.toggle('off', !isLightOn);
+    [brightnessInput, redInput, greenInput, blueInput].forEach(input => {
+        input.disabled = !isLightOn;
+    });
+    send_light_data(room_id); // 示例调用发送灯光状态
+}
+        // 更新灯光颜色
+        function updateLightColor() {
+            const r = redInput.value, g = greenInput.value, b = blueInput.value;
+            const brightness = brightnessInput.value / 100;
+            lightBulb.style.backgroundColor = `rgba(${r}, ${g}, ${b}, ${brightness})`;
+            lightBulb.style.boxShadow = `0 0 ${brightness * 20}px rgba(${r}, ${g}, ${b}, ${brightness})`;
+        }
+
+        [brightnessInput, redInput, greenInput, blueInput].forEach(input => {
+            input.addEventListener('input', updateLightColor);
+        });
+        // 添加鼠标松开发送消息
+        [brightnessInput, redInput, greenInput, blueInput].forEach(input => {
+            input.addEventListener('mouseup', () =>{send_light_data(room_id)});
+        });
+
+        // Curtain Control Logic
+        const leftCurtain = document.getElementById('left-curtain');
+        const rightCurtain = document.getElementById('right-curtain');
+        const leftCurtainRange = document.getElementById('leftCurtainRange');
+        const rightCurtainRange = document.getElementById('rightCurtainRange');
+        const leftCurtainStatus = document.getElementById('leftCurtainStatus');
+        const rightCurtainStatus = document.getElementById('rightCurtainStatus');
+
+        leftCurtainRange.addEventListener('input', () => {
+            leftCurtain.style.width = `${leftCurtainRange.value}%`;
+            leftCurtainStatus.textContent = leftCurtainRange.value === '0' ? 'Open' : 'Closed';
+        });
+        leftCurtainRange.addEventListener('mouseup', () => {
+            send_curtain_data(room_id)
+        });
+        rightCurtainRange.addEventListener('input', () => {
+            rightCurtain.style.width = `${rightCurtainRange.value}%`;
+            rightCurtainStatus.textContent = rightCurtainRange.value === '0' ? 'Open' : 'Closed';
+        });
+         rightCurtainRange.addEventListener('mouseup', () => {
+            send_curtain_data(room_id)
+        });
+
+        // Air Conditioner Control Logic
+        const acDial = document.getElementById('ac-dial');
+        const acTempDisplay = document.getElementById('acTempDisplay');
+        const tempInput = document.getElementById('temperature');
+        const modeSelect = document.getElementById('modeSelect');
+        const acModeDisplay = document.getElementById('acModeDisplay');
+        const tempDisplay = document.getElementById('tempDisplay');
+        document.getElementById('toggle-ac').addEventListener('click', () => {
+            isAcOn = !isAcOn;
+            acDial.classList.toggle('off', !isAcOn);
+            acTempDisplay.style.display = isAcOn ? 'block' : 'none';
+            tempInput.disabled = !isAcOn;
+            send_ac_data(room_id)
+        });
+
+        tempInput.addEventListener('input', () => {
+            tempDisplay.textContent = tempInput.value;
+            acTempDisplay.textContent = `${tempInput.value}°C`;
+
+        });
+        tempInput.addEventListener('mouseup', () => {
+            send_ac_data(room_id)
+        });
+
+        modeSelect.addEventListener('change', () => {
+            acModeDisplay.textContent = modeSelect.value.charAt(0).toUpperCase() + modeSelect.value.slice(1);
+            send_ac_data(room_id)
+        });
+        function openAirConditioner() {
+
+             isAcOn = !isAcOn;
+            acDial.classList.toggle('off', !isAcOn);
+            acTempDisplay.style.display = isAcOn ? 'block' : 'none';
+            tempInput.disabled = !isAcOn;
+            send_ac_data(room_id)
+        }
+        function closeAirConditioner() {
+             isAcOn = !isAcOn;
+            acDial.classList.toggle('off', !isAcOn);
+            acTempDisplay.style.display = isAcOn ? 'block' : 'none';
+            tempInput.disabled = !isAcOn;
+            send_ac_data(room_id)
+
+        }
+
+    </script>
+
+
+
+    
+    <script>
+
+        document.getElementById('voice-btn').addEventListener('click', () => {
+            fetch('/start_voice_recognition', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`Voice command executed: ${data.command}`);
+                } else {
+                    alert(`Error: ${data.error}`);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+           function openCurtains() {
+        leftCurtainRange.value = 0;
+        rightCurtainRange.value = 0;
+        updateCurtain(leftCurtainRange, leftCurtain, leftCurtainStatus);
+        updateCurtain(rightCurtainRange, rightCurtain, rightCurtainStatus);
+        send_curtain_data('open');
+    }
+
+    // 关闭窗帘
+    function closeCurtains() {
+        leftCurtainRange.value = 100;
+        rightCurtainRange.value = 100;
+        updateCurtain(leftCurtainRange, leftCurtain, leftCurtainStatus);
+        updateCurtain(rightCurtainRange, rightCurtain, rightCurtainStatus);
+        send_curtain_data('close');
+    }
+     function updateCurtain(rangeElement, curtainElement, statusElement) {
+        const value = rangeElement.value;
+        curtainElement.style.width = `${value}%`;
+        statusElement.textContent = value === '0' ? 'Open' : 'Closed';
+    }
+
+    </script>
+    
+ <div class="voice-control">
+    <button id="voice-btn">
+        <i class="fa fa-microphone"></i>
+        <span id="voice-status">Start Voice Control</span>
+    </button>
+</div>
+
+<script>
+
+// 初始化语音识别
+if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    alert("Your browser does not support Web Speech API.");
+} else {
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = 'en-US'; // 设置语言为英文
+    recognition.continuous = true; // 持续监听
+    recognition.interimResults = false; // 禁止显示临时结果
+
+    let isListening = false; // 是否正在监听
+    const voiceBtn = document.getElementById('voice-btn');
+    const voiceStatus = document.getElementById('voice-status');
+
+    // 按钮事件：启动或停止语音识别
+    voiceBtn.addEventListener('click', () => {
+        if (isListening) {
+            recognition.stop();
+            isListening = false;
+            voiceStatus.textContent = 'Start Voice Control';
+            console.log("Voice control stopped.");
+        } else {
+            recognition.start();
+            isListening = true;
+            voiceStatus.textContent = 'Stop Voice Control';
+            console.log("Voice control started.");
+        }
+    });
+
+    // 处理语音识别结果
+    recognition.onresult = (event) => {
+        const command = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
+        console.log(`Recognized command: ${command}`);
+        let commandRecognized = false;
+
+        if (command === 'turn on light bedroom') {
+            toggleLight(true); // 打开灯光
+            commandRecognized = true;
+        } else if (command === 'turn off light bedroom') {
+            toggleLight(false); // 关闭灯光
+            commandRecognized = true;
+        } else if (command === 'open curtain bedroom') {
+            openCurtains(); // 打开窗帘
+            commandRecognized = true;
+        } else if (command === 'close curtain bedroom') {
+            closeCurtains(); // 关闭窗帘
+            commandRecognized = true;
+        } else if (command === 'turn on air conditioner bedroom') {
+            openAirConditioner(); // 打开空调
+            commandRecognized = true;
+        } else if (command === 'turn off air conditioner bedroom') {
+            closeAirConditioner(); // 关闭空调
+            commandRecognized = true;
+        }
+
+        if (!commandRecognized) {
+            console.log("Unrecognized command.");
+        }
+    };
+
+    // 确保语音识别停止时不会自动重启
+    recognition.onend = () => {
+        if (isListening) {
+            console.log("Voice recognition stopped.");
+            isListening = false;
+            voiceStatus.textContent = 'Start Voice Control';
+        }
+    };
+
+    // 错误处理
+    recognition.onerror = (event) => {
+        console.error(`Voice recognition error: ${event.error}`);
+        isListening = false;
+        voiceStatus.textContent = 'Start Voice Control';
+    };
+}
+// 初始化灯光状态
+function initializeLightState() {
+    const lightState = localStorage.getItem('bedroom_light') === 'true';
+    toggleLight(lightState); // 根据状态更新灯光
+}
+document.addEventListener('DOMContentLoaded', () => {
+    initializeLightState();
+
+});
+</script>
+<script>
+        // 初始化房间状态到 localStorage
+document.addEventListener('DOMContentLoaded', () => {
+    const rooms = ['bedroom', 'living_room', 'kitchen', 'bathroom'];
+
+    /**
+     * 初始化房间灯光状态
+     * @param {number} currentRoomId 当前房间ID
+     */
+    function initializeRoomStates(currentRoomId) {
+        // 如果 localStorage 中没有存储状态，初始化所有房间的灯光为 false
+        rooms.forEach((room, index) => {
+            if (localStorage.getItem(`${room}_light`) === null) {
+                localStorage.setItem(`${room}_light`, 'false');
+            }
+        });
+
+        // 获取上一个激活的房间
+        const previousRoom = localStorage.getItem('current_active_room');
+
+        // 如果存在上一个房间并且不是当前房间，关闭上一个房间的灯光
+        if (previousRoom && parseInt(previousRoom, 10) !== currentRoomId) {
+            const previousRoomName = rooms[parseInt(previousRoom, 10) - 1];
+            localStorage.setItem(`${previousRoomName}_light`, 'false');
+        }
+
+        // 设置当前房间的灯光为 true
+        const currentRoomName = rooms[currentRoomId - 1];
+        localStorage.setItem(`${currentRoomName}_light`, 'true');
+
+        // 更新当前激活的房间
+        localStorage.setItem('current_active_room', currentRoomId.toString());
+
+        // 同步灯光状态到控制台（用于调试）
+        console.log('Room light states:', {
+            bedroom: localStorage.getItem('bedroom_light'),
+            living_room: localStorage.getItem('living_room_light'),
+            kitchen: localStorage.getItem('kitchen_light'),
+            bathroom: localStorage.getItem('bathroom_light'),
+        });
+    }
+
+    // 获取后端传递的 `current_room` 值
+    const currentRoomId = parseInt("{{ current_room }}", 10);
+
+    // 页面加载时初始化房间灯光状态
+    if (!isNaN(currentRoomId)) {
+        initializeRoomStates(currentRoomId);
+    }
+});
+ // 根据 localStorage 状态更新灯光
+    function updateLightFromLocalStorage() {
+        const storedLightState = localStorage.getItem('bedroom_light') === 'true';
+        if (storedLightState !== isLightOn) {
+            toggleLight(storedLightState);
+        }
+    }
+
+    // 每 50ms 检查一次 localStorage 中的灯光状态
+    setInterval(() => {
+        updateLightFromLocalStorage();
+    }, 50);
+</script>
+
+    
+</body>
+</html>
