@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Home - Room Selection</title>
+    <link rel="stylesheet" href="{{ url_for("static",filename = "style.css") }}">
+    <style>
+        .room-selection-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .room-button {
+            position: relative;
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 1.2em;
+            cursor: pointer;
+        }
+        .room-button .triangle {
+            position: absolute;
+            top: 100%; /* 按钮下方 */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 10px solid red;
+        }
+        .left-container{
+            background-image: url("/static/imgaes/left.webp");
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover;
+            width: 30%;
+            height: 350px;
+            min-width: 300px;
+            border-radius: 25px;
+
+        }
+        .right-container{
+            background-image: url("/static/imgaes/right.webp");
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover;
+            width: 30%;
+            min-width: 300px;
+            height: 350px;
+            border-radius: 25px;
+        }
+        .inner-text {
+            
+            font-size: 1.5rem;
+            text-align: center;
+            display: block;
+            box-sizing: border-box;
+            padding: 16px;
+        }
+        footer {
+            width: 100%;
+        }
+        .footer-top {
+            text-align: center;
+            color: #ff7f50;
+            margin-top: 70px;
+            font-size: 30px;
+            font-weight: bold;
+        }
+        .footer-mid {
+            text-align: center;
+            color: #ff7f50;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        .footer-bot{
+            background-image: url("/static/imgaes/bottom.jpg");
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: contain;
+            margin: 0px auto;
+            width: 70%;
+            height: 400px;
+        }
+    </style>
+    <script>
+        // 自动刷新页面，每 5 秒刷新一次
+        setInterval(() => {
+            window.location.reload();
+        }, 5000); // 时间单位为毫秒
+    </script>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="sidebar">
+        <div class="logo">SH</div>
+        <ul>
+            <li><a href="/" class="active">Home</a></li>
+            <li><a href="/bedroom">Bedroom</a></li>
+            <li><a href="/living_room">Living Room</a></li>
+            <li><a href="/kitchen">Kitchen</a></li>
+            <li><a href="/bathroom">Bathroom</a></li>
+        </ul>
+        <button class="logout-btn">{{ username }}<a href="/logout">Logout</a></button>
+    </nav>
+
+    <div class="main-content">
+        
+        <img style="display: block; width: 70%; margin: 0 auto;"
+        src="/static/imgaes/1.png">
+              
+        <header>
+            <h1>See Your Location</h1>
+        </header>
+
+        <!-- 房间选择按钮区域 -->
+        <div class="room-selection-container">
+            <!-- Bedroom 按钮 -->
+            <button class="room-button" onclick="window.location.href='/bedroom'">
+                Bedroom
+                {% if current_room == 1 %}
+                <div class="triangle"></div>
+                {% endif %}
+            </button>
+
+            <!-- Living Room 按钮 -->
+            <button class="room-button" onclick="window.location.href='/living_room'">
+                Living Room
+                {% if current_room == 2 %}
+                <div class="triangle"></div>
+                {% endif %}
+            </button>
+
+            <!-- Kitchen 按钮 -->
+            <button class="room-button" onclick="window.location.href='/kitchen'">
+                Kitchen
+                {% if current_room == 3 %}
+                <div class="triangle"></div>
+                {% endif %}
+            </button>
+
+            <!-- Bathroom 按钮 -->
+            <button class="room-button" onclick="window.location.href='/bathroom'">
+                Bathroom
+                {% if current_room == 4 %}
+                <div class="triangle"></div>
+                {% endif %}
+            </button>
+        </div>
+        <div style="display: flex; flex-direction: row;flex-wrap: wrap; justify-content: space-evenly; gap: 2%; width: 70%; margin: 0 auto;user-select: none;" >
+            <div class="left-container">
+                <h1 class="inner-text">A smarter home starts with Smart Home</h1>
+            </div>
+            <div class="right-container">
+                <h1 class="inner-text">Your smart home, everywhere you go.</h1>
+            </div>
+        </div>
+        <footer>
+            <div class="footer-top">Easy equipment control</div>
+            <div class="footer-mid">App supports the automatic classification of lights, curtains, air conditioner which is more tidy. One App controls and manages all devices.</div>
+            <div class="footer-bot"></div>
+        </footer>
+    </div>
+<script>
+    // 初始化房间状态到 localStorage
+document.addEventListener('DOMContentLoaded', () => {
+    const rooms = ['bedroom', 'living_room', 'kitchen', 'bathroom'];
+
+    /**
+     * 初始化房间灯光状态
+     * @param {number} currentRoomId 当前房间ID
+     */
+    function initializeRoomStates(currentRoomId) {
+        // 如果 localStorage 中没有存储状态，初始化所有房间的灯光为 false
+        rooms.forEach((room, index) => {
+            if (localStorage.getItem(`${room}_light`) === null) {
+                localStorage.setItem(`${room}_light`, 'false');
+            }
+        });
+
+        // 获取上一个激活的房间
+        const previousRoom = localStorage.getItem('current_active_room');
+
+        // 如果存在上一个房间并且不是当前房间，关闭上一个房间的灯光
+        if (previousRoom && parseInt(previousRoom, 10) !== currentRoomId) {
+            const previousRoomName = rooms[parseInt(previousRoom, 10) - 1];
+            localStorage.setItem(`${previousRoomName}_light`, 'false');
+        }
+
+        // 设置当前房间的灯光为 true
+        const currentRoomName = rooms[currentRoomId - 1];
+        localStorage.setItem(`${currentRoomName}_light`, 'true');
+
+        // 更新当前激活的房间
+        localStorage.setItem('current_active_room', currentRoomId.toString());
+
+        // 同步灯光状态到控制台（用于调试）
+        console.log('Room light states:', {
+            bedroom: localStorage.getItem('bedroom_light'),
+            living_room: localStorage.getItem('living_room_light'),
+            kitchen: localStorage.getItem('kitchen_light'),
+            bathroom: localStorage.getItem('bathroom_light'),
+        });
+    }
+
+    // 获取后端传递的 `current_room` 值
+    const currentRoomId = parseInt("{{ current_room }}", 10);
+
+    // 页面加载时初始化房间灯光状态
+    if (!isNaN(currentRoomId)) {
+        initializeRoomStates(currentRoomId);
+    }
+});
+</script>
+</body>
+</html>
